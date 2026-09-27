@@ -231,7 +231,49 @@ else
 fi
 
 # ---------------------------------------------------
-header "8. HARDWARE / RESURS MƏLUMATI"
+header "8. MONİTORİNQ AGENTLƏRİ (Wazuh / Zabbix)"
+
+# --- Wazuh agent ---
+if command -v systemctl >/dev/null 2>&1 && systemctl list-unit-files 2>/dev/null | grep -q "wazuh-agent"; then
+    WAZUH_STATE=$(systemctl is-active wazuh-agent 2>/dev/null)
+    if [ "$WAZUH_STATE" = "active" ]; then
+        echo -e "${GREEN}Wazuh agent:${NC} QURAŞDIRILIB, ${GREEN}AKTİV (işləyir)${NC}"
+    else
+        echo -e "${GREEN}Wazuh agent:${NC} QURAŞDIRILIB, ${RED}$WAZUH_STATE${NC}"
+    fi
+    if [ -f /var/ossec/etc/ossec.conf ]; then
+        WAZUH_MGR=$(grep -A1 "<server>" /var/ossec/etc/ossec.conf 2>/dev/null | grep "<address>" | sed -e 's/<[^>]*>//g' | xargs)
+        [ -n "$WAZUH_MGR" ] && echo -e "  Manager ünvanı: $WAZUH_MGR"
+    fi
+elif [ -d /var/ossec ]; then
+    echo -e "${GREEN}Wazuh agent:${NC} QURAŞDIRILIB (qovluq tapıldı), amma systemd servisi aşkarlanmadı"
+else
+    echo -e "${GREEN}Wazuh agent:${NC} ${RED}QURAŞDIRILMAYIB${NC}"
+fi
+
+echo ""
+
+# --- Zabbix agent ---
+if command -v systemctl >/dev/null 2>&1 && systemctl list-unit-files 2>/dev/null | grep -qE "zabbix-agent"; then
+    ZBX_SERVICE=$(systemctl list-unit-files 2>/dev/null | grep -oE "zabbix-agent2?\.service" | head -n1)
+    ZBX_STATE=$(systemctl is-active "$ZBX_SERVICE" 2>/dev/null)
+    if [ "$ZBX_STATE" = "active" ]; then
+        echo -e "${GREEN}Zabbix agent:${NC} QURAŞDIRILIB ($ZBX_SERVICE), ${GREEN}AKTİV (işləyir)${NC}"
+    else
+        echo -e "${GREEN}Zabbix agent:${NC} QURAŞDIRILIB ($ZBX_SERVICE), ${RED}$ZBX_STATE${NC}"
+    fi
+    ZBX_CONF="/etc/zabbix/zabbix_agentd.conf"
+    [ -f "$ZBX_CONF" ] || ZBX_CONF="/etc/zabbix/zabbix_agent2.conf"
+    if [ -f "$ZBX_CONF" ]; then
+        ZBX_SRV=$(grep -E "^Server=" "$ZBX_CONF" 2>/dev/null | cut -d= -f2)
+        [ -n "$ZBX_SRV" ] && echo -e "  Server ünvanı: $ZBX_SRV"
+    fi
+else
+    echo -e "${GREEN}Zabbix agent:${NC} ${RED}QURAŞDIRILMAYIB${NC}"
+fi
+
+# ---------------------------------------------------
+header "9. HARDWARE / RESURS MƏLUMATI"
 
 echo -e "${GREEN}RAM istifadəsi:${NC}"
 free -h | sed 's/^/  /'
@@ -248,7 +290,7 @@ echo -e "${GREEN}CPU məlumatı:${NC}"
 lscpu | grep -E "^Model name|^CPU\(s\)|^Thread|^Core|^Socket|^CPU MHz|^Architecture" | sed 's/^/  /'
 
 # ---------------------------------------------------
-header "9. SİSTEM İSTİFADƏÇİLƏRİ"
+header "10. SİSTEM İSTİFADƏÇİLƏRİ"
 echo -e "${GREEN}Login edə bilən (real) istifadəçilər:${NC}"
 awk -F: '$3>=1000 && $1!="nobody" {print "  - " $1 " (UID:" $3 ", Shell:" $7 ")"}' /etc/passwd
 
