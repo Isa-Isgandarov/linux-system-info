@@ -176,10 +176,21 @@ else
 fi
 
 # ---------------------------------------------------
-header "7. DİNLƏNƏN PORTLAR (ss -tulpan)"
+header "7. DİNLƏNƏN PORTLAR"
 if command -v ss >/dev/null 2>&1; then
-    echo -e "${GREEN}Proto  Local Address:Port         Proses${NC}"
-    ss -tulpan 2>/dev/null | awk 'NR>1 {print "  " $1, $5, $7}'
+    printf "  %-6s %-28s %-20s %s\n" "PROTO" "ÜNVAN:PORT" "PROSES" "PID"
+    printf "  %-6s %-28s %-20s %s\n" "-----" "----------" "------" "---"
+    ss -tulpn 2>/dev/null | tail -n +2 | while IFS= read -r line; do
+        proto=$(echo "$line" | awk '{print $1}')
+        addr=$(echo "$line" | awk '{print $5}')
+        proc=$(echo "$line" | sed -n 's/.*(("\([^"]*\)".*/\1/p')
+        pid=$(echo "$line" | sed -n 's/.*pid=\([0-9]*\).*/\1/p')
+        [ -z "$proc" ] && proc="-"
+        [ -z "$pid" ] && pid="-"
+        printf "  %-6s %-28s %-20s %s\n" "$proto" "$addr" "$proc" "$pid"
+    done
+    echo ""
+    echo -e "${CYAN}(Qeyd: 127.0.0.1 / 127.0.0.53 = yalnız lokal sistem daxilindən çıxışlıdır | 0.0.0.0 / [::] = xarici şəbəkədən əlçatandır)${NC}"
 else
     echo "ss əmri tapılmadı. netstat yoxlanılır:"
     netstat -tulpn 2>/dev/null | sed 's/^/  /'
