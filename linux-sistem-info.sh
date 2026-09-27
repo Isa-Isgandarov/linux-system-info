@@ -73,13 +73,14 @@ else
     echo -e "${GREEN}İnternetə çıxış:${NC} ${RED}YOXDUR${NC} (xarici IP-lərə ping cavab vermədi)"
 fi
 
-# DNS ayırdetmə (resolution) yoxlaması
+# DNS ayırdetmə (resolution) yoxlaması - yalnız IPv4 nəticə istənilir
 DNS_TEST_HOST="google.com"
-if command -v getent >/dev/null 2>&1 && getent hosts "$DNS_TEST_HOST" >/dev/null 2>&1; then
-    RESOLVED_IP=$(getent hosts "$DNS_TEST_HOST" | awk '{print $1}' | head -n1)
+if command -v getent >/dev/null 2>&1 && getent ahostsv4 "$DNS_TEST_HOST" >/dev/null 2>&1; then
+    RESOLVED_IP=$(getent ahostsv4 "$DNS_TEST_HOST" | awk '{print $1}' | head -n1)
     echo -e "${GREEN}DNS ayırdetmə:${NC} ${GREEN}İŞLƏYİR${NC} ($DNS_TEST_HOST -> $RESOLVED_IP)"
-elif command -v nslookup >/dev/null 2>&1 && nslookup "$DNS_TEST_HOST" >/dev/null 2>&1; then
-    echo -e "${GREEN}DNS ayırdetmə:${NC} ${GREEN}İŞLƏYİR${NC} ($DNS_TEST_HOST həll olundu)"
+elif command -v nslookup >/dev/null 2>&1 && nslookup -type=A "$DNS_TEST_HOST" >/dev/null 2>&1; then
+    RESOLVED_IP=$(nslookup -type=A "$DNS_TEST_HOST" 2>/dev/null | awk '/^Address: / {print $2}' | tail -n1)
+    echo -e "${GREEN}DNS ayırdetmə:${NC} ${GREEN}İŞLƏYİR${NC} ($DNS_TEST_HOST -> ${RESOLVED_IP:-tapıldı})"
 else
     if [ "$INTERNET_VAR" = "1" ]; then
         echo -e "${GREEN}DNS ayırdetmə:${NC} ${RED}İŞLƏMİR${NC} (internet var, amma domen adı IP-yə çevrilmir - DNS server problemi ola bilər)"
