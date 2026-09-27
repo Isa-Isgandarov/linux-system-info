@@ -62,12 +62,31 @@ fi
 header "3. ŞƏBƏKƏ / IP MƏLUMATLARI"
 
 # İnternetə çıxış yoxlaması (2 paket, 2 saniyə timeout)
+INTERNET_VAR=0
 if ping -c 2 -W 2 8.8.8.8 >/dev/null 2>&1; then
     echo -e "${GREEN}İnternetə çıxış:${NC} ${GREEN}VAR${NC} (8.8.8.8 cavab verdi)"
+    INTERNET_VAR=1
 elif ping -c 2 -W 2 1.1.1.1 >/dev/null 2>&1; then
     echo -e "${GREEN}İnternetə çıxış:${NC} ${GREEN}VAR${NC} (1.1.1.1 cavab verdi)"
+    INTERNET_VAR=1
 else
     echo -e "${GREEN}İnternetə çıxış:${NC} ${RED}YOXDUR${NC} (xarici IP-lərə ping cavab vermədi)"
+fi
+
+# DNS ayırdetmə (resolution) yoxlaması
+DNS_TEST_HOST="google.com"
+if command -v getent >/dev/null 2>&1 && getent hosts "$DNS_TEST_HOST" >/dev/null 2>&1; then
+    RESOLVED_IP=$(getent hosts "$DNS_TEST_HOST" | awk '{print $1}' | head -n1)
+    echo -e "${GREEN}DNS ayırdetmə:${NC} ${GREEN}İŞLƏYİR${NC} ($DNS_TEST_HOST -> $RESOLVED_IP)"
+elif command -v nslookup >/dev/null 2>&1 && nslookup "$DNS_TEST_HOST" >/dev/null 2>&1; then
+    echo -e "${GREEN}DNS ayırdetmə:${NC} ${GREEN}İŞLƏYİR${NC} ($DNS_TEST_HOST həll olundu)"
+else
+    if [ "$INTERNET_VAR" = "1" ]; then
+        echo -e "${GREEN}DNS ayırdetmə:${NC} ${RED}İŞLƏMİR${NC} (internet var, amma domen adı IP-yə çevrilmir - DNS server problemi ola bilər)"
+        echo -e "  Yoxlamaq üçün: cat /etc/resolv.conf   |   Test: nslookup google.com"
+    else
+        echo -e "${GREEN}DNS ayırdetmə:${NC} ${RED}İŞLƏMİR${NC} (yoxlanıla bilmədi, internet olmaya bilər)"
+    fi
 fi
 echo ""
 
