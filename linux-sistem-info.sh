@@ -142,13 +142,18 @@ if command -v docker >/dev/null 2>&1; then
     echo -e "${GREEN}Konteynerlərin qovluqları (volume/bind mount):${NC}"
     for CID in $(docker ps -q); do
         CNAME=$(docker inspect --format '{{.Name}}' "$CID" 2>/dev/null | sed 's#^/##')
-        echo -e "  ${YELLOW}$CNAME${NC}"
-        MOUNTS=$(docker inspect --format '{{range .Mounts}}    {{.Type}}: {{.Source}} -> {{.Destination}} ({{if .RW}}rw{{else}}ro{{end}}){{"\n"}}{{end}}' "$CID" 2>/dev/null)
+        echo -e "  ${YELLOW}▶ $CNAME${NC}"
+        MOUNTS=$(docker inspect --format '{{range .Mounts}}{{.Type}}|{{.Source}}|{{.Destination}}|{{if .RW}}rw{{else}}ro{{end}}{{"\n"}}{{end}}' "$CID" 2>/dev/null)
         if [ -n "$MOUNTS" ]; then
-            echo -e "$MOUNTS"
+            echo "$MOUNTS" | while IFS='|' read -r mtype msrc mdst mrw; do
+                [ -z "$mtype" ] && continue
+                if [ "$mrw" = "rw" ]; then RW_COLOR="${GREEN}rw${NC}"; else RW_COLOR="${RED}ro${NC}"; fi
+                printf "      ${CYAN}%-7s${NC} %s ${YELLOW}→${NC} %s (%b)\n" "$mtype" "$msrc" "$mdst" "$RW_COLOR"
+            done
         else
-            echo "    (heç bir volume/bind mount yoxdur)"
+            echo -e "      ${CYAN}(heç bir volume/bind mount yoxdur)${NC}"
         fi
+        echo ""
     done
 else
     echo "Docker quraşdırılmayıb."
