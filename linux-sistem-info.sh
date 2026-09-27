@@ -197,7 +197,24 @@ else
 fi
 
 # ---------------------------------------------------
-header "8. SİSTEM İSTİFADƏÇİLƏRİ"
+header "8. HARDWARE / RESURS MƏLUMATI"
+
+echo -e "${GREEN}RAM istifadəsi:${NC}"
+free -h | sed 's/^/  /'
+
+echo ""
+echo -e "${GREEN}Disk sahəsi:${NC}"
+df -h --output=source,size,used,avail,pcent,target 2>/dev/null | grep -Ev "tmpfs|udev|loop" | sed 's/^/  /'
+
+echo ""
+echo -e "${GREEN}CPU nüvə sayı:${NC} $(nproc)"
+
+echo ""
+echo -e "${GREEN}CPU məlumatı:${NC}"
+lscpu | grep -E "^Model name|^CPU\(s\)|^Thread|^Core|^Socket|^CPU MHz|^Architecture" | sed 's/^/  /'
+
+# ---------------------------------------------------
+header "9. SİSTEM İSTİFADƏÇİLƏRİ"
 echo -e "${GREEN}Login edə bilən (real) istifadəçilər:${NC}"
 awk -F: '$3>=1000 && $1!="nobody" {print "  - " $1 " (UID:" $3 ", Shell:" $7 ")"}' /etc/passwd
 
