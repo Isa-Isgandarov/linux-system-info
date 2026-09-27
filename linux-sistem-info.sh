@@ -8,6 +8,7 @@
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Skriptin özünün olduğu qovluq (nə yerdən işlədilsə də, nəticə həmişə orada saxlanılır)
@@ -51,6 +52,16 @@ fi
 
 # ---------------------------------------------------
 header "3. ŞƏBƏKƏ / IP MƏLUMATLARI"
+
+# İnternetə çıxış yoxlaması (2 paket, 2 saniyə timeout)
+if ping -c 2 -W 2 8.8.8.8 >/dev/null 2>&1; then
+    echo -e "${GREEN}İnternetə çıxış:${NC} ${GREEN}VAR${NC} (8.8.8.8 cavab verdi)"
+elif ping -c 2 -W 2 1.1.1.1 >/dev/null 2>&1; then
+    echo -e "${GREEN}İnternetə çıxış:${NC} ${GREEN}VAR${NC} (1.1.1.1 cavab verdi)"
+else
+    echo -e "${GREEN}İnternetə çıxış:${NC} ${RED}YOXDUR${NC} (xarici IP-lərə ping cavab vermədi)"
+fi
+echo ""
 
 # Əsas fiziki interfeysi tapmağa çalışırıq (loopback, docker, bridge, veth istisna)
 MAIN_IF=$(ip -o link show | awk -F': ' '{print $2}' | grep -Ev '^(lo|docker|br-|veth|virbr)' | head -n1)
@@ -112,8 +123,8 @@ else
     echo -e "${GREEN}IP tipi:${NC} $IP_METHOD  ${CYAN}(mənbə: $IP_SOURCE)${NC}"
 fi
 
-echo -e "${GREEN}DNS serverləri:${NC}"
-resolvectl status 2>/dev/null | grep "DNS Server" | sed 's/^/  /' || cat /etc/resolv.conf | grep nameserver | sed 's/^/  /'
+echo -e "${GREEN}DNS serverləri (IPv4):${NC}"
+resolvectl status 2>/dev/null | grep "DNS Server" | grep -v ':.*:' | sed 's/^/  /' || cat /etc/resolv.conf | grep nameserver | grep -v ':.*:' | sed 's/^/  /'
 
 # ---------------------------------------------------
 header "4. DOCKER MƏLUMATLARI"
@@ -131,7 +142,6 @@ else
 fi
 
 # ---------------------------------------------------
-RED='\033[0;31m'
 header "5. FIREWALL STATUSU"
 if command -v ufw >/dev/null 2>&1; then
     UFW_RAW=$(ufw status 2>/dev/null | head -n1)
@@ -191,7 +201,7 @@ header "7. DİNLƏNƏN PORTLAR"
 if command -v ss >/dev/null 2>&1; then
     printf "  %-6s %-28s %-20s %s\n" "PROTO" "ÜNVAN:PORT" "PROSES" "PID"
     printf "  %-6s %-28s %-20s %s\n" "-----" "----------" "------" "---"
-    ss -tulpn 2>/dev/null | tail -n +2 | while IFS= read -r line; do
+    ss -4 -tulpn 2>/dev/null | tail -n +2 | while IFS= read -r line; do
         proto=$(echo "$line" | awk '{print $1}')
         addr=$(echo "$line" | awk '{print $5}')
         proc=$(echo "$line" | sed -n 's/.*(("\([^"]*\)".*/\1/p')
@@ -201,7 +211,7 @@ if command -v ss >/dev/null 2>&1; then
         printf "  %-6s %-28s %-20s %s\n" "$proto" "$addr" "$proc" "$pid"
     done
     echo ""
-    echo -e "${CYAN}(Qeyd: 127.0.0.1 / 127.0.0.53 = yalnız lokal sistem daxilindən çıxışlıdır | 0.0.0.0 / [::] = xarici şəbəkədən əlçatandır)${NC}"
+    echo -e "${CYAN}(Qeyd: 127.0.0.1 / 127.0.0.53 = yalnız lokal sistem daxilindən çıxışlıdır | 0.0.0.0 = xarici şəbəkədən əlçatandır)${NC}"
 else
     echo "ss əmri tapılmadı. netstat yoxlanılır:"
     netstat -tulpn 2>/dev/null | sed 's/^/  /'
