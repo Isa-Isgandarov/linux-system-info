@@ -137,6 +137,19 @@ if command -v docker >/dev/null 2>&1; then
     RUNNING_COUNT=$(docker ps -q | wc -l)
     TOTAL_COUNT=$(docker ps -aq | wc -l)
     echo -e "${GREEN}İşləyən:${NC} $RUNNING_COUNT   ${GREEN}Cəmi (dayandırılmış daxil):${NC} $TOTAL_COUNT"
+
+    echo ""
+    echo -e "${GREEN}Konteynerlərin qovluqları (volume/bind mount):${NC}"
+    for CID in $(docker ps -q); do
+        CNAME=$(docker inspect --format '{{.Name}}' "$CID" 2>/dev/null | sed 's#^/##')
+        echo -e "  ${YELLOW}$CNAME${NC}"
+        MOUNTS=$(docker inspect --format '{{range .Mounts}}    {{.Type}}: {{.Source}} -> {{.Destination}} ({{if .RW}}rw{{else}}ro{{end}}){{"\n"}}{{end}}' "$CID" 2>/dev/null)
+        if [ -n "$MOUNTS" ]; then
+            echo -e "$MOUNTS"
+        else
+            echo "    (heç bir volume/bind mount yoxdur)"
+        fi
+    done
 else
     echo "Docker quraşdırılmayıb."
 fi
