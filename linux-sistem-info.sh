@@ -44,10 +44,18 @@ echo -e "${GREEN}Uptime:${NC} $(uptime -p 2>/dev/null || uptime)"
 # ---------------------------------------------------
 header "2. TARİX VƏ SAAT"
 echo -e "${GREEN}Sistem saatı:${NC} $(date)"
-echo -e "${GREEN}Timezone:${NC} $(timedatectl 2>/dev/null | grep "Time zone" | awk '{print $3, $4, $5}')"
+CURRENT_TZ=$(timedatectl show -p Timezone --value 2>/dev/null)
+echo -e "${GREEN}Timezone:${NC} ${CURRENT_TZ:-Naməlum}"
 if command -v timedatectl >/dev/null 2>&1; then
     NTP_STATUS=$(timedatectl show -p NTPSynchronized --value 2>/dev/null)
     echo -e "${GREEN}NTP sinxronizasiyası:${NC} ${NTP_STATUS:-Naməlum}"
+fi
+
+if [ "$CURRENT_TZ" != "Asia/Baku" ]; then
+    echo -e "${RED}Tövsiyə:${NC} Timezone hazırda Asia/Baku deyil (indiki: ${CURRENT_TZ:-naməlum})."
+    echo -e "  Dəyişmək üçün: sudo timedatectl set-timezone Asia/Baku"
+else
+    echo -e "${GREEN}Timezone Asia/Baku üzərinə düzgün ayarlanıb.${NC}"
 fi
 
 # ---------------------------------------------------
