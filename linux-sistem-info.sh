@@ -10,6 +10,17 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Skriptin özünün olduğu qovluq (nə yerdən işlədilsə də, nəticə həmişə orada saxlanılır)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Çıxış faylının adı: hostname_YYYY-MM-DD_HH-MM.txt
+VM_ADI="$(hostname)"
+TARIX="$(date +%Y-%m-%d_%H-%M)"
+CIXIS_FAYLI="${SCRIPT_DIR}/${VM_ADI}_${TARIX}.txt"
+
+# Bütün çıxışı EYNİ ANDA həm terminala (rəngli) göstər, həm də fayla (rəngsiz, təmiz mətn) yaz
+exec > >(tee >(sed -r 's/\x1B\[[0-9;]*[a-zA-Z]//g' > "$CIXIS_FAYLI")) 2>&1
+
 line() {
     echo -e "${CYAN}--------------------------------------------------${NC}"
 }
@@ -225,4 +236,5 @@ who
 echo ""
 line
 echo -e "${YELLOW}Hesabat tamamlandı.${NC}"
+echo -e "${YELLOW}Fayl saxlanıldı: ${CIXIS_FAYLI}${NC}"
 line
